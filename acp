@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+from utils import *
+from acp_process import *
+from review import *
+from commit_avail import Check_avail
+
+def acp_help():
+    print("Options related to cherry-pick")
+    print("     acp [options] (-l, -c, -r, -a)")
+    print("     acp [options] <count/commit> (-s)")
+    print("         -a or add      --> to add a commit id to existing list, to create a new list use -c first and then use -a")
+    print("         -l or list     --> to check the list of ordered commit ids")
+    print("         -c or continue --> to clear of logs of cherry-pick")
+    print("         -s or status   --> to check the status of applied commits and list of commits in order")
+    print("\nOptions for complex git operations")
+    print("         -r or reset    --> to reset the logs")
+    print("                        --> -r all or --reset all to reset all acp applied commits")
+    print("         -S or Signoff  --> to add signoff message to the commit log \"acp -S <count/commit_id>\"")
+    print("\nOptions for review and others")
+    print("         -d or diff     --> to check the diff of a backported patch")
+    print("         -cal or check  --> to check the availability of the commits 'Usage : acp check <options>'")
+    print("         review         --> to create review request links 'Usage : acp review <count>'")
+    print("\nOthers")
+    print("         -u or update   --> to update your script")
+    print("         -lg or log     --> to update your script")
+    print("         -cl or clean   --> to clear of logs of cherry-pick")
+
+def Call_options():
+    global Continue_flag
+
+    if sys.argv[1] in ["reset", "-r"]:
+        if sys.argv[1] in ["-r", "reset"] and len(sys.argv) > 2 and sys.argv[2] in ["all", "a"]:
+            if os.path.exists(applied):
+                with open(applied, 'r') as file:
+                    count = sum(1 for line in file)
+                print(f"==> git reset --hard HEAD~{count}")
+                Run_command(f"git reset --hard HEAD~{count}")
+                print("Cleaning all applied commits")
+                os.remove(applied)
+            sys.exit(0)
+        else:
+            try:
+                # Try to convert sys.argv[2] to an integer
+                reset_value = int(sys.argv[2])
+                print(f"==> git reset --hard HEAD~{reset_value}")
+                Run_command(f"git reset --hard HEAD~{reset_value}")
+            except ValueError:
+                # If conversion fails, it's not an integer, so treat it as a commit hash
+                print(f"==> git reset --hard {sys.argv[2]}")
+                Run_command(f"git reset --hard {sys.argv[2]}")
+            sys.exit(0)
+            # change in applied_file pending....
+
+    elif sys.argv[1] in ["status", "-s"]:
+        if not os.path.exists(sorted_file):
+            print("Nothing in list to show")
+            sys.exit(0)
+        print("\nThe list of commits in QUEUE are:\n")
+        Run_command(f"cat {sorted_file}")
+        if not os.path.exists(applied):
+            print("\nNo commits applied yet\n")
+            sys.exit(0)
+        print("\nThe list of commits already applied:\n")
+        Run_command(f"cat {applied}")
+        sys.exit(0)
+
+    elif sys.argv[1] in ["list", "-l"]:
+        if not os.path.exists(sorted_file) and not os.path.exists(tmpfile):
+            print("Nothing added to list")
+            sys.exit(1)
+        else :
+            Process_commits()
+            print("The list of commits in QUEUE are:")
+            Run_command(f"cat {sorted_file}")
+            sys.exit(0)
+
+    elif sys.argv[1] in ["clean", "-cl"]:
+        Cleanup()
+        print("Cleaning done successfully..")
+        sys.exit(0)
+
+    elif sys.argv[1] in ["add", "-a"]:
+        Get_commit_input()
+        print("Added successfully to list....")
+        sys.exit(0)
+        
+    elif sys.argv[1] in ["diff", "-d"]:
+        Check_commit_diff()
+        sys.exit(0)
+
+    elif sys.argv[1] in ["check", "-cal"]:
+        Check_avail()
+        sys.exit(0)
+
+    elif sys.argv[1]=="review":
+        Create_review_links()
+        sys.exit(0)
+
+    elif sys.argv[1] in ["signoff", "-S"]:
+        # Run `git commit --amend -s`
+        print("Adding sign-off content...")
+        try:
+            # Try to convert sys.argv[2] to an integer
+            reset_value = int(sys.argv[2])
+            print(f"==> git rebase --signoff HEAD~{reset_value}")
+            Run_command(f"git rebase --signoff HEAD~{reset_value}")
+        except ValueError:
+            # If conversion fails, it's not an integer, so treat it as a commit hash
+            print(f"==> git rebase --signoff {sys.argv[2]}")
+            Run_command(f"git rebase --signoff {sys.argv[2]}")
+        sys.exit(0)
+
+    elif sys.argv[1] in ["continue", "-c"]:
+        Continue_flag = True
+        
+    elif sys.argv[1] in ["update", "-u"]:
+        Update_acp()
+        sys.exit(0)
+    
+    elif sys.argv[1] in ["log", "-lg"]:
+        repo = input("Enter the repo link you want to take log from : ")
+        branch = input("Enter the name of the branch : ")
+        dir = "/tmp/tmp_repo"
+        if os.path.exists(dir):
+            Run_command(f"rm -rf {dir}")
+        print(f"git clone --single-branch -b {branch} {repo} {dir} -j10")
+        print("!Downloading repo.....")
+        Run_command(f"git clone --single-branch -b {branch} {repo} {dir} -j10")
+        print("!Updating log.....")
+        Run_command(f"git -C {dir} log --pretty=oneline {branch} > {acp_log}")
+        print("log updated successfully to {acp_log}")
+        sys.exit(0)
+
+    elif sys.argv[1] == "--help" or sys.argv[1] == "-h":
+        acp_help()
+        sys.exit(0)
+
+    else:
+        print("Invalid option... See help")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        Call_options()
+    
+    Auto_cherry_pick()
