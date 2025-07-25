@@ -313,9 +313,9 @@ def Update_acp():
         if diff.stdout :
             Run_command("sudo cp /tmp/acp /usr/local/bin/acp")
             print("!Update successfull...")
-            os.remove("/tmp/acp")
         else :
             print("!Already up to date...")
+        os.remove("/tmp/acp")
         Run_command("acp -h")
         sys.exit(0)
     print("Some problem with updating check after sometimes..")
@@ -328,13 +328,12 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 def Create_review_links():
-    if len(sys.argv) < 4:
-        print("Usage: script.py <arg1> <commit_count> <file_name>")
+    if len(sys.argv) < 3:
+        print("Usage: acp review <commit_count>")
         sys.exit(1)
 
     count = int(sys.argv[2])
-    outfile= str(sys.argv[3])
-    outfile = "/home/amd/" + outfile 
+    outfile = "/home/amd/commits.xlsx"
 
     result = subprocess.run(
         ["git", "log", "--pretty=oneline", f"-n{count}"],
