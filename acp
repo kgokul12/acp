@@ -3,6 +3,8 @@ import os
 import subprocess
 import signal
 import sys
+import re
+import concurrent.futures
 
 # Define temporary files
 tmpfile = "/tmp/commits"
@@ -499,6 +501,69 @@ def Check_avail():
     print("\tAvailable commits are stored in --> /tmp/Avail_commit")
     print("\t   and not available commits in --> /tmp/No_Avail_commit")
 
+#===CHECK DEPS===
+
+def Check_deps():
+    # Define a function to check each commit in parallel
+    def check_commit(cmid):
+        short_cmid = cmid[:12]
+
+        # Check for dependencies using `--grep`
+        deps_result = subprocess.run(f"git log origin/stable_kernel_master --oneline --grep=\"{short_cmid}\"", stdout=subprocess.PIPE, shell=True, universal_newlines=True)
+        deps_output = deps_result.stdout.strip() or "no deps"
+        return f"==>checking {short_cmid}\n{deps_output}"
+
+    # function to process commit ids if not given as input
+    def Process_upstream(up_cmids,count):
+        log_out = subprocess.run(f"git log -{count} ", stdout=subprocess.PIPE, shell=True, universal_newlines=True)
+        lines = [line for line in log_out.stdout.splitlines()]
+
+        pattern = rf"\b{re.escape('commit')}\s+(\w+)\s+{re.escape('upstream')}\b"
+
+        for line in lines:
+            if re.search(pattern, line):
+                up_cmids.append(line.strip().split()[1])
+
+    #Function to process commit ids given as input
+    def getlist(input_list):
+        print("Enter a value (or type 'done' to finish): ")
+        while True:
+            user_input = input()
+            if user_input.lower() == 'done':
+                 break
+            input_list.append(user_input)
+
+    #--MAIN--
+    # check the arguments
+    if len(sys.argv) < 3:
+        print("acp <ck-dep/-cdp> <count/-l>")
+        print("Enter the count(inside Linux_Backport repo) or -l(to add a list of commit ids) to check the deps")
+        sys.exit(0)
+
+    up_cmids = []
+    count=0
+
+    try:
+        ret_val = int(sys.argv[2])
+        count = sys.argv[2]
+    except ValueError:
+        if sys.argv[2] == "-l":
+            getlist(up_cmids)
+        else :
+            print("Invalid input")
+            sys.exit(1)
+
+    if count != 0 :
+        Process_upstream(up_cmids,count)
+
+    print(up_cmids)
+    # Use a ThreadPoolExecutor for parallel processing
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = list(executor.map(check_commit, up_cmids))
+
+    # Print all results
+    for result in results:
+        print(result)
 
 #===ACP MAIN===
  
@@ -516,7 +581,8 @@ def acp_help():
     print("         -S or Signoff  --> to add signoff message to the commit log \"acp -S <count/commit_id>\"")
     print("\nOptions for review and others")
     print("         -d or diff     --> to check the diff of a backported patch")
-    print("         -cal or check  --> to check the availability of the commits 'Usage : acp check <options>'")
+    print("         -cal or ck-avl  --> to check the availability of the commits 'Usage : acp ck-avl <options>'")
+    print("         -cdp or ck-dep  --> to check the availability of the commits 'Usage : acp ck-dep <options>'")
     print("         review         --> to create review request links 'Usage : acp review <count>'")
     print("\nOthers")
     print("         -u or update   --> to update your script")
@@ -587,8 +653,12 @@ def Call_options():
         Check_commit_diff()
         sys.exit(0)
 
-    elif sys.argv[1] in ["check", "-cal"]:
+    elif sys.argv[1] in ["ck-avl", "-cal"]:
         Check_avail()
+        sys.exit(0)
+
+    elif sys.argv[1] in ["ck-dep", "-cdp"]:
+        Check_deps()
         sys.exit(0)
 
     elif sys.argv[1]=="review":
