@@ -309,22 +309,27 @@ def Check_commit_diff():
 
 #===UPDATE===
 def Update_acp():
-    Run_command(f"wget -P /tmp -q https://raw.githubusercontent.com/kgokul12/acp/main/acp")
-    if os.path.exists("/tmp/acp"):
-        diff = subprocess.run(f"diff /tmp/acp /usr/local/bin/acp",stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
-        if diff.stdout :
-            Run_command("sudo cp /tmp/acp /usr/local/bin/acp")
-            print("!Update successfull...")
-        else :
-            print("!Already up to date...")
-        os.remove("/tmp/acp")
-        Run_command("acp -h")
-        sys.exit(0)
-    print("Some problem with updating check after sometimes..")
+    if not os.path.exists("/home/amd/.acp"):
+        Run_command("git clone https://github.com/kgokul12/acp /home/amd/.acp")
+    else :
+        Run_command("git -C /home/amd/.acp pull origin main -q --rebase") 
+    
+    Run_command("make -C /home/amd/.acp")
+    Run_command("acp -h")
+    sys.exit(0)
 
-
+#===SYSINFO===
+def print_sysinfo():
+    Run_command("/home/amd/.acp/sysinfo.sh")
+    sys.exit(0)
 
 #===REVIEW SCRIPT===
+try:
+    import openpyxl
+except ImportError:
+    print("openpyxl not found. Installing...")
+    Run_command("sudo pip3 install openpyxl")
+
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -584,6 +589,7 @@ def acp_help():
     print("         -cal or ck-avl  --> to check the availability of the commits 'Usage : acp ck-avl <options>'")
     print("         -cdp or ck-dep  --> to check the availability of the commits 'Usage : acp ck-dep <options>'")
     print("         review         --> to create review request links 'Usage : acp review <count>'")
+    print("         sysinfo        --> to get the Host system info used for backporting")
     print("\nOthers")
     print("         -u or update   --> to update your script")
     print("         -lg or log     --> to update your script")
@@ -663,6 +669,10 @@ def Call_options():
 
     elif sys.argv[1]=="review":
         Create_review_links()
+        sys.exit(0)
+        
+    elif sys.argv[1]=="sysinfo":
+        print_sysinfo()
         sys.exit(0)
 
     elif sys.argv[1] in ["signoff", "-S"]:
