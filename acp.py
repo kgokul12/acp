@@ -318,11 +318,6 @@ def Update_acp():
     Run_command("acp -h")
     sys.exit(0)
 
-#===SYSINFO===
-def print_sysinfo():
-    Run_command("/home/amd/.acp/sysinfo.sh")
-    sys.exit(0)
-
 #===REVIEW SCRIPT===
 try:
     import openpyxl
@@ -588,6 +583,7 @@ def acp_help():
     print("         -d or diff     --> to check the diff of a backported patch")
     print("         -cal or ck-avl  --> to check the availability of the commits 'Usage : acp ck-avl <options>'")
     print("         -cdp or ck-dep  --> to check the availability of the commits 'Usage : acp ck-dep <options>'")
+    print("         -cf or ck-files --> to check the files backported are compiled or not 'Usage : acp ck-file'")
     print("         review         --> to create review request links 'Usage : acp review <count>'")
     print("         sysinfo        --> to get the Host system info used for backporting")
     print("\nOthers")
@@ -667,12 +663,16 @@ def Call_options():
         Check_deps()
         sys.exit(0)
 
+    elif sys.argv[1] in ["ck-files", "-cf"]:
+        Run_command("/home/amd/.acp/file_check.py")
+        sys.exit(0)
+
     elif sys.argv[1]=="review":
         Create_review_links()
         sys.exit(0)
         
     elif sys.argv[1]=="sysinfo":
-        print_sysinfo()
+        Run_command("/home/amd/.acp/sysinfo.sh")
         sys.exit(0)
 
     elif sys.argv[1] in ["signoff", "-S"]:
