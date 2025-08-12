@@ -13,6 +13,7 @@ sorted_file = "/tmp/sorted"
 acp_log = "/home/amd/acp_log"
 temp_file_path = "/tmp/tmp_file"
 temp_script_path = "/tmp/tmp_script.sh"
+acp_home = "/home/amd/.acp"
 
 sorted_commits=[]
 applied_commits=[]
@@ -309,12 +310,12 @@ def Check_commit_diff():
 
 #===UPDATE===
 def Update_acp():
-    if not os.path.exists("/home/amd/.acp"):
-        Run_command("git clone https://github.com/kgokul12/acp /home/amd/.acp")
+    if not os.path.exists(f"{acp_home}"):
+        Run_command(f"git clone https://github.com/kgokul12/acp {acp_home}")
     else :
-        Run_command("git -C /home/amd/.acp pull origin main -q --rebase") 
+        Run_command(f"git -C {acp_home} pull origin main -q --rebase") 
     
-    Run_command("make -C /home/amd/.acp")
+    Run_command(f"make -C {acp_home}")
     Run_command("acp -h")
     sys.exit(0)
 
@@ -568,28 +569,32 @@ def Check_deps():
 #===ACP MAIN===
  
 def acp_help():
-    print("Options related to cherry-pick")
+    print("\033[95mOptions related to cherry-pick\033[0m")
     print("     acp [options] (-l, -c, -r, -a)")
     print("     acp [options] <count/commit> (-s)")
     print("         -a or add      --> to add a commit id to existing list, to create a new list use -c first and then use -a")
     print("         -l or list     --> to check the list of ordered commit ids")
     print("         -c or continue --> to clear of logs of cherry-pick")
     print("         -s or status   --> to check the status of applied commits and list of commits in order")
-    print("\nOptions for complex git operations")
+    print("\n\033[95mOptions for complex git operations\033[0m")
     print("         -r or reset    --> to reset the logs")
     print("                        --> -r all or --reset all to reset all acp applied commits")
     print("         -S or Signoff  --> to add signoff message to the commit log \"acp -S <count/commit_id>\"")
-    print("\nOptions for review and others")
+    print("\n\033[95mOptions for review and others\033[0m")
     print("         -d or diff     --> to check the diff of a backported patch")
     print("         -cal or ck-avl  --> to check the availability of the commits 'Usage : acp ck-avl <options>'")
     print("         -cdp or ck-dep  --> to check the availability of the commits 'Usage : acp ck-dep <options>'")
     print("         -cf or ck-files --> to check the files backported are compiled or not 'Usage : acp ck-file'")
+    print("         order          --> to order you backport commit ids as per upstream")
     print("         review         --> to create review request links 'Usage : acp review <count>'")
+    print("\n\033[95mOthers\033[0m")
     print("         sysinfo        --> to get the Host system info used for backporting")
-    print("\nOthers")
+    print("         mk-link        --> to create link")
+    print("         ck-tag         --> to create link")
     print("         -u or update   --> to update your script")
     print("         -lg or log     --> to update your script")
     print("         -cl or clean   --> to clear of logs of cherry-pick")
+    print(f"\n\033[93mSources available at {acp_home}\033[0m")
 
 #===OPTIONS===
 def Call_options():
@@ -664,7 +669,7 @@ def Call_options():
         sys.exit(0)
 
     elif sys.argv[1] in ["ck-files", "-cf"]:
-        Run_command("/home/amd/.acp/file_check.py")
+        Run_command(f"{acp_home}/file_check.py")
         sys.exit(0)
 
     elif sys.argv[1]=="review":
@@ -672,7 +677,17 @@ def Call_options():
         sys.exit(0)
         
     elif sys.argv[1]=="sysinfo":
-        Run_command("/home/amd/.acp/sysinfo.sh")
+        Run_command(f"{acp_home}/sysinfo.sh")
+        sys.exit(0)
+        
+    elif sys.argv[1]=="order":
+        Run_command(f"{acp_home}/order.sh")
+        sys.exit(0)
+    elif sys.argv[1]=="mk-link":
+        Run_command(f"{acp_home}/hyperlink_maker.py")
+        sys.exit(0)
+    elif sys.argv[1]=="ck-tag":
+        Run_command(f"{acp_home}/find_tag.py")
         sys.exit(0)
 
     elif sys.argv[1] in ["signoff", "-S"]:
