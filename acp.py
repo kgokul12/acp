@@ -585,6 +585,7 @@ def acp_help():
     print("         -cal or ck-avl  --> to check the availability of the commits 'Usage : acp ck-avl <options>'")
     print("         -cdp or ck-dep  --> to check the availability of the commits 'Usage : acp ck-dep <options>'")
     print("         -cf or ck-files --> to check the files backported are compiled or not 'Usage : acp ck-file'")
+    print("         -kabi or ck-kabi--> to check the changed symbols for kabi")
     print("         order          --> to order you backport commit ids as per upstream")
     print("         review         --> to create review request links 'Usage : acp review <count>'")
     print("\n\033[95mOthers\033[0m")
@@ -670,6 +671,10 @@ def Call_options():
 
     elif sys.argv[1] in ["ck-files", "-cf"]:
         Run_command(f"{acp_home}/file_check.py")
+        sys.exit(0)
+
+    elif sys.argv[1] in ["ck-kabi", "-kabi"]:
+        Run_command(f"{acp_home}/kabi-ci/auto-check.sh")
         sys.exit(0)
 
     elif sys.argv[1]=="review":
