@@ -15,6 +15,10 @@ temp_file_path = "/tmp/tmp_file"
 temp_script_path = "/tmp/tmp_script.sh"
 acp_home = "/home/amd/.acp"
 
+RED = "\033[91m"
+GRN = "\033[92m"
+RST = "\033[0m"
+
 sorted_commits=[]
 applied_commits=[]
 Continue_flag = False
@@ -278,11 +282,18 @@ def Check_commit_diff():
             file.write(result.stdout)
         print(f"==> Compare {bp_commit} | {up_commit[:14]} :: diff {file_no}b {file_no}u")
         
+        result = subprocess.run(f"diff {file_no}b {file_no}u | grep 'Signed-off-by'", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
+        Signoff = result.stdout.split()[1:]
+        if result.stdout:
+            print(" ".join(Signoff))
+        else :
+            print(f'Signed-off-by: {RED}Missing!!{RST}')
+
         result = subprocess.run(f"diff {file_no}b {file_no}u | grep -e '> +' -e '> -' -e '< +' -e '< -'", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
         diff = result.stdout.strip() or "!* no diff"
         if diff != "!* no diff":
             result = subprocess.run(f"grep -e 'Backport changes' -e 'Backport Changes' {file_no}b", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
-            print(f"Deviaton explaination : {'Yes' if result.stdout else 'No'}")
+            print(f"Deviaton explaination : {f'{GRN}Yes{RST}' if result.stdout else f'{RED}No{RST}'}")
         print(diff)
     # Local function Process_diff ends here
 
