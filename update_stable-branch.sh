@@ -23,10 +23,10 @@ backport_repo="github.com/AMDEPYC/Linux_Backport"
 
 # credentials
 username="kgokul12"
-token="1DEi9R81axjoYbXZ61xlQXI5zjB0oK0iHimd"
+token="wUAWgVUHoij8pUu8lK4HsepJjgIwGF0KURAo"
 
 # Temp dir
-tmp_dir="/tmp/linux_acp"
+tmp_dir="/home/amd/.linux_acp"
 
 echo "[$(date)] Starting script....."
 

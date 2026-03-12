@@ -1,3 +1,5 @@
+#!/usr/bin/bash
+
 # Functions to process each commit ID
 read_input() {
     commit_ids=()
@@ -20,7 +22,7 @@ read_input() {
 
 process_commit() {
     local cmid=$1
-    tag_out=$(git tag --contains="$cmid" --sort=taggerdate | head -n1)
+    tag_out=$(git -C /home/amd/.linux_acp tag --contains="$cmid" --sort=taggerdate | head -n1)
     sed -i "s/^@$cmid/$cmid \t$tag_out/g" "$tag_file"
 }
 
