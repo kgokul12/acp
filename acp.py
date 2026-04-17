@@ -6,13 +6,21 @@ import sys
 import re
 import concurrent.futures
 
+try:
+    tty_out = subprocess.check_output(['tty'], stderr=subprocess.STDOUT, universal_newlines=True).strip()
+    tty_num = ''.join(filter(str.isdigit, tty_out))
+    if not tty_num:
+        tty_num = str(os.getpid())
+except Exception:
+    tty_num = str(os.getpid())
+
 # Define temporary files
-tmpfile = "/tmp/commits"
-applied = "/tmp/applied"
-sorted_file = "/tmp/sorted"
+tmpfile = f"/tmp/commits{tty_num}"
+applied = f"/tmp/applied{tty_num}"
+sorted_file = f"/tmp/sorted{tty_num}"
 acp_log = "/home/amd/acp_log"
-temp_file_path = "/tmp/tmp_file"
-temp_script_path = "/tmp/tmp_script.sh"
+temp_file_path = f"/tmp/tmp_file{tty_num}"
+temp_script_path = f"/tmp/tmp_script{tty_num}.sh"
 acp_home = "/home/amd/.acp"
 
 RED = "\033[91m"
@@ -456,15 +464,15 @@ def get_commit_details(cmid):
 def Check_avail():
     # Check if any arguments are passed
     if len(sys.argv) == 2:
-        print("To skip copying log, use\n\t$ ./commit.py -i\n\t*only if you copied the log file in /tmp/log\n")
+        print(f"To skip copying log, use\n\t$ ./commit.py -i\n\t*only if you copied the log file in /tmp/log{tty_num}\n")
     
     print(f"\nChecking commits in branch --> {get_current_branch()}\n")
     print("Enter all the commits")
 
     if len(sys.argv) == 2:
         print("Wait, It's logging....")
-        Run_command(f"git log > /tmp/log")
-        Run_command(f"git log --pretty=oneline > /tmp/1_log")
+        Run_command(f"git log > /tmp/log{tty_num}")
+        Run_command(f"git log --pretty=oneline > /tmp/1_log{tty_num}")
 
     print("\n ######################################### \n")
 
@@ -483,35 +491,35 @@ def Check_avail():
                  commits.append(line)
     except EOFError:
         pass
-    if os.path.exists("/tmp/Avail_commit"):
-        os.remove("/tmp/Avail_commit")
-    if os.path.exists("/tmp/No_Avail_commit"):
-        os.remove("/tmp/No_Avail_commit")
+    if os.path.exists(f"/tmp/Avail_commit{tty_num}"):
+        os.remove(f"/tmp/Avail_commit{tty_num}")
+    if os.path.exists(f"/tmp/No_Avail_commit{tty_num}"):
+        os.remove(f"/tmp/No_Avail_commit{tty_num}")
 
-    Run_command("touch /tmp/Avail_commit /tmp/No_Avail_commit")
+    Run_command(f"touch /tmp/Avail_commit{tty_num} /tmp/No_Avail_commit{tty_num}")
     for cmid in commits:
-        res = subprocess.run(f"grep {cmid} /tmp/1_log -q", shell=True, universal_newlines=True)
+        res = subprocess.run(f"grep {cmid} /tmp/1_log{tty_num} -q", shell=True, universal_newlines=True)
         if not res.returncode :
             x += 1
-            Run_command(f"echo {cmid} >> /tmp/Avail_commit")
+            Run_command(f"echo {cmid} >> /tmp/Avail_commit{tty_num}")
             print(f"{get_commit_details(cmid)}   Available")
         else :
-            grep_line = subprocess.run(f"grep {cmid} /tmp/log", stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
+            grep_line = subprocess.run(f"grep {cmid} /tmp/log{tty_num}", stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
             if grep_line.stdout:
                 z += 1
-                Run_command(f"echo {cmid} >> /tmp/Avail_commit")
+                Run_command(f"echo {cmid} >> /tmp/Avail_commit{tty_num}")
                 print(f"commit {cmid} Available like this ")
                 for line in grep_line.stdout.splitlines():
                     print(f"\t{line}")
             else:
                 y += 1
-                Run_command(f"echo {cmid} >> /tmp/No_Avail_commit")
+                Run_command(f"echo {cmid} >> /tmp/No_Avail_commit{tty_num}")
                 print(f"commit {cmid}   Not Available")
 
     print("\n ######################################### \n")
     print(f"\tTotally   -({x})- commits Available directly -({z})- may be as upstream and -({y})- commits Not Available\n")
-    print("\tAvailable commits are stored in --> /tmp/Avail_commit")
-    print("\t   and not available commits in --> /tmp/No_Avail_commit")
+    print(f"\tAvailable commits are stored in --> /tmp/Avail_commit{tty_num}")
+    print(f"\t   and not available commits in --> /tmp/No_Avail_commit{tty_num}")
 
 #===CHECK DEPS===
 
@@ -730,7 +738,7 @@ def Call_options():
     elif sys.argv[1] in ["log", "-lg"]:
         repo = input("Enter the repo link you want to take log from : ")
         branch = input("Enter the name of the branch : ")
-        dir = "/tmp/tmp_repo"
+        dir = f"/tmp/tmp_repo{tty_num}"
         if os.path.exists(dir):
             Run_command(f"rm -rf {dir}")
         print(f"git clone --single-branch -b {branch} {repo} {dir} -j10")
@@ -738,7 +746,7 @@ def Call_options():
         Run_command(f"git clone --single-branch -b {branch} {repo} {dir} -j10")
         print("!Updating log.....")
         Run_command(f"git -C {dir} log --pretty=oneline {branch} > {acp_log}")
-        print("log updated successfully to {acp_log}")
+        print(f"log updated successfully to {acp_log}")
         sys.exit(0)
 
     elif sys.argv[1] == "--help" or sys.argv[1] == "-h":
