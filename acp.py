@@ -531,7 +531,10 @@ def Check_deps():
         # Check for dependencies using `--grep`
         deps_result = subprocess.run(f"git log origin/stable_kernel_master --oneline --grep=\"{short_cmid}\"", stdout=subprocess.PIPE, shell=True, universal_newlines=True)
         deps_output = deps_result.stdout.strip() or "no deps"
-        return f"==>checking {short_cmid}\n{deps_output}"
+        if deps_output == "no deps":
+            return f"{deps_output}"
+        else:
+            return f"{short_cmid} -- {deps_output}"
 
     # function to process commit ids if not given as input
     def Process_upstream(up_cmids,count):
@@ -577,13 +580,17 @@ def Check_deps():
         Process_upstream(up_cmids,count)
 
     print(up_cmids)
+    print(f"\n{GRN}###Processing commit ids...\n{RST}")
     # Use a ThreadPoolExecutor for parallel processing
     with concurrent.futures.ThreadPoolExecutor() as executor:
         results = list(executor.map(check_commit, up_cmids))
 
-    # Print all results
+    # Print only results that have actual dependencies
+    print(f"\n{RED} Upstream    --      Fix dependencies{RST}")
     for result in results:
-        print(result)
+        if "no deps" not in result:
+            print(result)
+
 
 #===ACP MAIN===
  
